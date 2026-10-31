@@ -1,0 +1,393 @@
+[
+    {
+        "id": "tab-flood-system",
+        "type": "tab",
+        "label": "Flood Early Warning System",
+        "disabled": false,
+        "info": "Rainfall and Water Level Early Warning System using HiveMQ Cloud MQTT and PyTorch LSTM."
+    },
+    {
+        "id": "tls-hivemq",
+        "type": "tls-config",
+        "name": "HiveMQ Cloud TLS",
+        "cert": "",
+        "key": "",
+        "ca": "",
+        "certname": "",
+        "keyname": "",
+        "caname": "",
+        "servername": "0f1860f0ed1a409cba6412559af478c2.s1.eu.hivemq.cloud",
+        "verifyservercert": true,
+        "alpnprotocol": ""
+    },
+    {
+        "id": "broker-hivemq-cloud",
+        "type": "mqtt-broker",
+        "name": "HiveMQ Cloud",
+        "broker": "0f1860f0ed1a409cba6412559af478c2.s1.eu.hivemq.cloud",
+        "port": "8883",
+        "tls": "tls-hivemq",
+        "clientid": "nodered_flood_client",
+        "autoConnect": true,
+        "usetls": true,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "ui-page-flood",
+        "type": "ui_tab",
+        "name": "Flood Early Warning Dashboard",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "grp-live-telemetry",
+        "type": "ui_group",
+        "name": "Live Sensor Telemetry",
+        "tab": "ui-page-flood",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "grp-lstm-forecasting",
+        "type": "ui_group",
+        "name": "LSTM Forecast & Early Warning",
+        "tab": "ui-page-flood",
+        "order": 2,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "grp-charts",
+        "type": "ui_group",
+        "name": "Trend Analysis & Hydrograph",
+        "tab": "ui-page-flood",
+        "order": 3,
+        "disp": true,
+        "width": "12",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "in-rainfall-data",
+        "type": "mqtt in",
+        "z": "tab-flood-system",
+        "name": "MQTT: rainfall/data",
+        "topic": "rainfall/data",
+        "qos": "1",
+        "datatype": "json",
+        "broker": "broker-hivemq-cloud",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 130,
+        "y": 140,
+        "wires": [
+            [
+                "fn-split-sensor-data"
+            ]
+        ]
+    },
+    {
+        "id": "fn-split-sensor-data",
+        "type": "function",
+        "z": "tab-flood-system",
+        "name": "Parse Sensor Stream",
+        "func": "const p = msg.payload;\nif (!p) return null;\n\nconst rainfall = Number(p.rainfall) || 0;\nconst water_level = Number(p.water_level) || 0;\nconst condition = p.weather_condition || 'Normal';\nconst ts = p.timestamp ? new Date(p.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();\n\n// Output 1: Rainfall Gauge\nconst m1 = { payload: rainfall, topic: 'Rainfall (mm)' };\n// Output 2: Water Level Gauge\nconst m2 = { payload: water_level, topic: 'Water Level (m)' };\n// Output 3: Status / Phase text\nconst m3 = { payload: condition + ' (' + ts + ')' };\n// Output 4: Chart payload (water level)\nconst m4 = { payload: water_level, topic: 'Current Water Level (m)' };\n\nreturn [m1, m2, m3, m4];",
+        "outputs": 4,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 140,
+        "wires": [
+            [
+                "ui-gauge-rain"
+            ],
+            [
+                "ui-gauge-water"
+            ],
+            [
+                "ui-text-weather"
+            ],
+            [
+                "ui-chart-trends"
+            ]
+        ]
+    },
+    {
+        "id": "ui-gauge-rain",
+        "type": "ui_gauge",
+        "z": "tab-flood-system",
+        "name": "Rainfall Gauge",
+        "group": "grp-live-telemetry",
+        "order": 1,
+        "width": 3,
+        "height": 4,
+        "gtype": "gage",
+        "title": "Rainfall",
+        "label": "mm",
+        "format": "{{value}}",
+        "min": 0,
+        "max": 60,
+        "colors": [
+            "#2ecc71",
+            "#f39c12",
+            "#e74c3c"
+        ],
+        "seg1": "15",
+        "seg2": "30",
+        "x": 650,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "ui-gauge-water",
+        "type": "ui_gauge",
+        "z": "tab-flood-system",
+        "name": "Water Level Gauge",
+        "group": "grp-live-telemetry",
+        "order": 2,
+        "width": 3,
+        "height": 4,
+        "gtype": "gage",
+        "title": "Water Level",
+        "label": "meters",
+        "format": "{{value}}",
+        "min": 0,
+        "max": 3.5,
+        "colors": [
+            "#2ecc71",
+            "#f39c12",
+            "#e74c3c"
+        ],
+        "seg1": "1.5",
+        "seg2": "2.0",
+        "x": 660,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "ui-text-weather",
+        "type": "ui_text",
+        "z": "tab-flood-system",
+        "group": "grp-live-telemetry",
+        "order": 3,
+        "width": 6,
+        "height": 1,
+        "name": "Weather Condition",
+        "label": "Weather State",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "x": 660,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "in-forecast-data",
+        "type": "mqtt in",
+        "z": "tab-flood-system",
+        "name": "MQTT: flood/prediction",
+        "topic": "flood/prediction",
+        "qos": "1",
+        "datatype": "json",
+        "broker": "broker-hivemq-cloud",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 140,
+        "y": 320,
+        "wires": [
+            [
+                "fn-parse-forecast"
+            ]
+        ]
+    },
+    {
+        "id": "fn-parse-forecast",
+        "type": "function",
+        "z": "tab-flood-system",
+        "name": "Parse LSTM Predictions",
+        "func": "const p = msg.payload;\nif (!p) return null;\n\nconst forecast = Number(p.predicted_water_level) || 0;\nconst risk = p.risk_level || 'SAFE';\nconst action = p.recommended_action || 'Monitoring';\nconst warning = p.warning_message || '';\nconst rise = p.rate_of_rise !== undefined ? (p.rate_of_rise >= 0 ? '+' : '') + Number(p.rate_of_rise).toFixed(2) + ' m' : '';\n\n// Output 1: Forecast Gauge\nconst m1 = { payload: forecast, topic: 'Forecast (m)' };\n// Output 2: Risk Banner\nlet color = '#27ae60';\nif (risk === 'WATCH') color = '#f39c12';\nelse if (risk === 'WARNING') color = '#e67e22';\nelse if (risk === 'CRITICAL') color = '#c0392b';\n\nconst m2 = {\n    payload: `<div style=\"background-color:${color}; color:white; padding:12px; border-radius:8px; text-align:center;\">\n        <h2 style=\"margin:0; font-size:20px;\">STATUS: ${risk}</h2>\n        <p style=\"margin:4px 0 0 0; font-size:13px;\">${warning}</p>\n        <p style=\"margin:2px 0 0 0; font-size:12px; opacity:0.9;\">Rate of Rise: ${rise}</p>\n    </div>`\n};\n\n// Output 3: Recommended Action text\nconst m3 = { payload: action };\n\n// Output 4: Forecast chart line\nconst m4 = { payload: forecast, topic: 'LSTM Predicted Level (m)' };\n\n// Output 5: Alert toast (if warning or critical)\nconst m5 = (risk === 'WARNING' || risk === 'CRITICAL') ? { payload: warning, topic: 'FLOOD ALERT: ' + risk } : null;\n\nreturn [m1, m2, m3, m4, m5];",
+        "outputs": 5,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 320,
+        "wires": [
+            [
+                "ui-gauge-forecast"
+            ],
+            [
+                "ui-html-risk-card"
+            ],
+            [
+                "ui-text-action"
+            ],
+            [
+                "ui-chart-trends"
+            ],
+            [
+                "ui-toast-alert"
+            ]
+        ]
+    },
+    {
+        "id": "ui-gauge-forecast",
+        "type": "ui_gauge",
+        "z": "tab-flood-system",
+        "name": "Forecast Gauge",
+        "group": "grp-lstm-forecasting",
+        "order": 1,
+        "width": 6,
+        "height": 4,
+        "gtype": "gage",
+        "title": "LSTM Predicted Water Level",
+        "label": "m (Next step)",
+        "format": "{{value}}",
+        "min": 0,
+        "max": 3.5,
+        "colors": [
+            "#2ecc71",
+            "#f39c12",
+            "#e74c3c"
+        ],
+        "seg1": "1.5",
+        "seg2": "2.0",
+        "x": 650,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "ui-html-risk-card",
+        "type": "ui_template",
+        "z": "tab-flood-system",
+        "group": "grp-lstm-forecasting",
+        "name": "Risk Status Banner",
+        "order": 2,
+        "width": 6,
+        "height": 3,
+        "format": "<div ng-bind-html=\"msg.payload\"></div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 660,
+        "y": 340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ui-text-action",
+        "type": "ui_text",
+        "z": "tab-flood-system",
+        "group": "grp-lstm-forecasting",
+        "order": 3,
+        "width": 6,
+        "height": 2,
+        "name": "Recommended Action",
+        "label": "Automated Response",
+        "format": "{{msg.payload}}",
+        "layout": "col-center",
+        "className": "",
+        "x": 670,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "ui-toast-alert",
+        "type": "ui_toast",
+        "z": "tab-flood-system",
+        "position": "top right",
+        "displayTime": "6",
+        "highlight": "",
+        "sendall": true,
+        "outputs": 0,
+        "ok": "Acknowledge",
+        "cancel": "",
+        "raw": false,
+        "className": "",
+        "topic": "Early Warning Alert",
+        "name": "Alarm Popup",
+        "x": 650,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "ui-chart-trends",
+        "type": "ui_chart",
+        "z": "tab-flood-system",
+        "group": "grp-charts",
+        "order": 1,
+        "width": 12,
+        "height": 6,
+        "name": "Live Hydrograph Chart",
+        "label": "River Water Level vs LSTM Forecast Trend",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "Awaiting sensor & prediction streams...",
+        "dot": false,
+        "ymin": "0",
+        "ymax": "3.5",
+        "removeOlder": "15",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#3498db",
+            "#e74c3c",
+            "#2ecc71",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 930,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    }
+]
