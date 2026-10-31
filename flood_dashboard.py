@@ -149,12 +149,6 @@ st.markdown("""
     }
 
     /* KPI Stat Cards */
-    .kpi-container {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
-        margin-bottom: 22px;
-    }
     .kpi-card {
         background: rgba(15, 23, 42, 0.75);
         border: 1px solid rgba(255, 255, 255, 0.08);
@@ -198,17 +192,19 @@ st.markdown("""
         font-weight: 500;
     }
 
-    /* River Embankment Cross-Section Graphic */
-    .river-channel-box {
-        background: #0f172a;
-        border-radius: 14px;
-        border: 1px solid #1e293b;
-        padding: 16px;
-        position: relative;
-        height: 180px;
-        overflow: hidden;
-        margin-top: 10px;
+    /* Badges */
+    .badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
     }
+    .badge-safe { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid #10b981; }
+    .badge-watch { background: rgba(245,158,11,0.2); color: #fbbf24; border: 1px solid #f59e0b; }
+    .badge-warning { background: rgba(249,115,22,0.25); color: #fb923c; border: 1px solid #f97316; }
+    .badge-critical { background: rgba(239,68,68,0.25); color: #f87171; border: 1px solid #ef4444; }
 
     /* Custom Streamlit adjustments */
     .stTabs [data-baseweb="tab-list"] {
@@ -283,6 +279,10 @@ with st.sidebar:
     st.markdown("### 🎛️ Station Control")
     auto_refresh = st.toggle("⚡ Live Telemetry Feed", value=True)
     refresh_rate = st.select_slider("Telemetry Interval", options=[2, 3, 5], value=3)
+
+    st.markdown("---")
+    st.markdown("### 🗺️ GIS Map Style")
+    map_theme = st.selectbox("Mapbox Layer", ["carto-darkmatter", "open-street-map", "carto-positron"], index=0)
 
     st.markdown("---")
     st.markdown("### ☁️ HiveMQ Cloud Broker")
@@ -404,10 +404,112 @@ else:
 
 
 # ---------------------------------------------------------------------------
+# REGIONAL HYDROLOGICAL SENSOR NETWORK (GIS STATIONS)
+# ---------------------------------------------------------------------------
+base_stations = [
+    {
+        "id": "ST-01",
+        "name": "Ridge Headwater Reservoir",
+        "lat": 28.7180,
+        "lon": 77.1020,
+        "type": "Upstream Reservoir",
+        "level_offset": -0.35,
+        "rain_factor": 1.15
+    },
+    {
+        "id": "ST-02",
+        "name": "Northern Tributary Inflow",
+        "lat": 28.6790,
+        "lon": 77.1550,
+        "type": "Tributary Junction",
+        "level_offset": -0.15,
+        "rain_factor": 1.05
+    },
+    {
+        "id": "ST-03",
+        "name": "Central Urban River Bridge",
+        "lat": 28.6320,
+        "lon": 77.2180,
+        "type": "Primary Real-Time Sensor",
+        "level_offset": 0.0,  # Main active station
+        "rain_factor": 1.0
+    },
+    {
+        "id": "ST-04",
+        "name": "Metro Embankment Barrier",
+        "lat": 28.5870,
+        "lon": 77.2680,
+        "type": "Urban Levee Flood Wall",
+        "level_offset": 0.12,
+        "rain_factor": 0.95
+    },
+    {
+        "id": "ST-05",
+        "name": "East Plain Agricultural Sluice",
+        "lat": 28.5420,
+        "lon": 77.3250,
+        "type": "Retention Bypass Basin",
+        "level_offset": -0.20,
+        "rain_factor": 0.90
+    },
+    {
+        "id": "ST-06",
+        "name": "Delta Estuary Spillway",
+        "lat": 28.4980,
+        "lon": 77.3820,
+        "type": "Terminal Discharge Channel",
+        "level_offset": -0.40,
+        "rain_factor": 0.85
+    }
+]
+
+# Enrich stations with live physical calculations and risk color coding
+stations_live = []
+for s in base_stations:
+    s_water = max(0.5, round(curr_water + s["level_offset"], 2))
+    s_pred = max(0.5, round(pred_water + s["level_offset"] * 1.05, 2))
+    s_rain = max(0.0, round(curr_rain * s["rain_factor"], 1))
+
+    if s_pred < LEVEL_SAFE_MAX:
+        s_risk = "SAFE"
+        s_color = "#10b981"  # Emerald Green
+        badge_cls = "badge-safe"
+    elif s_pred < LEVEL_WATCH_MAX:
+        s_risk = "WATCH"
+        s_color = "#f59e0b"  # Amber Yellow
+        badge_cls = "badge-watch"
+    elif s_pred < LEVEL_WARNING_MAX:
+        s_risk = "WARNING"
+        s_color = "#f97316"  # Radiant Orange
+        badge_cls = "badge-warning"
+    else:
+        s_risk = "CRITICAL"
+        s_color = "#ef4444"  # Radiant Red
+        badge_cls = "badge-critical"
+
+    stations_live.append({
+        "id": s["id"],
+        "name": s["name"],
+        "lat": s["lat"],
+        "lon": s["lon"],
+        "type": s["type"],
+        "water_level": s_water,
+        "forecast_crest": s_pred,
+        "rainfall": s_rain,
+        "risk": s_risk,
+        "color": s_color,
+        "badge_cls": badge_cls
+    })
+
+df_stations = pd.DataFrame(stations_live)
+
+
+# ---------------------------------------------------------------------------
 # NAVIGATION TABS
 # ---------------------------------------------------------------------------
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🚨 Live Command Center",
+    "🗺️ Geographical GIS Flood Map",
     "🌊 River Catchment Cross-Section",
     "🧪 Storm Simulator Studio",
     "🧠 AI Model Diagnostics"
@@ -637,9 +739,145 @@ with tab1:
 
 
 # ===========================================================================
-# TAB 2: RIVER CATCHMENT CROSS-SECTION
+# TAB 2: GEOGRAPHICAL GIS FLOOD MAP (WITH WATER LEVEL COLOR INDICATIONS)
 # ===========================================================================
 with tab2:
+    st.markdown("### 🗺️ Geographical GIS Flood Monitoring Network")
+    st.caption("Interactive satellite river basin map with real-time station water level indicators, threshold color badges, and river channel paths.")
+
+    # Top Filter & Legend Row
+    map_c1, map_c2, map_c3, map_c4 = st.columns([2, 1, 1, 1])
+    with map_c1:
+        st.markdown("""
+        <div style="font-size: 13px; color: #94a3b8; display:flex; align-items:center; gap: 15px; margin-top: 5px;">
+            <span style="display:flex; align-items:center;"><span style="height:10px; width:10px; background:#10b981; border-radius:50%; display:inline-block; margin-right:5px;"></span><strong>Safe (&lt;1.5m)</strong></span>
+            <span style="display:flex; align-items:center;"><span style="height:10px; width:10px; background:#f59e0b; border-radius:50%; display:inline-block; margin-right:5px;"></span><strong>Watch (1.5-2.0m)</strong></span>
+            <span style="display:flex; align-items:center;"><span style="height:10px; width:10px; background:#f97316; border-radius:50%; display:inline-block; margin-right:5px;"></span><strong>Warning (2.0-2.5m)</strong></span>
+            <span style="display:flex; align-items:center;"><span style="height:10px; width:10px; background:#ef4444; border-radius:50%; display:inline-block; margin-right:5px;"></span><strong>Critical (&gt;2.5m)</strong></span>
+        </div>
+        """, unsafe_allow_html=True)
+    with map_c2:
+        safe_count = len(df_stations[df_stations["risk"] == "SAFE"])
+        st.metric("🟢 Safe Stations", safe_count)
+    with map_c3:
+        watch_count = len(df_stations[df_stations["risk"] == "WATCH"])
+        st.metric("🟡 Watch Stations", watch_count)
+    with map_c4:
+        alert_count = len(df_stations[df_stations["risk"].isin(["WARNING", "CRITICAL"])])
+        st.metric("🔴 Danger Alerts", alert_count, delta="Action Req." if alert_count > 0 else "Normal", delta_color="inverse")
+
+    # Render Plotly Map with compatibility for Scattermap (Plotly 6+) & Scattermapbox
+    ScatterMapClass = getattr(go, "Scattermap", getattr(go, "Scattermapbox", None))
+    map_layout_name = "map" if hasattr(go, "Scattermap") else "mapbox"
+
+    river_lats = [s["lat"] for s in stations_live]
+    river_lons = [s["lon"] for s in stations_live]
+
+    fig_gis = go.Figure()
+
+    # 1. River channel connecting polyline (neon blue river flow)
+    fig_gis.add_trace(ScatterMapClass(
+        lat=river_lats,
+        lon=river_lons,
+        mode="lines",
+        line=dict(width=5, color="#38bdf8"),
+        name="River Flow Channel",
+        hoverinfo="skip"
+    ))
+
+    # 2. Station markers with color-coded water level risk circles
+    station_customdata = [
+        [s["name"], s["type"], s["water_level"], s["forecast_crest"], s["rainfall"], s["risk"]]
+        for s in stations_live
+    ]
+
+    fig_gis.add_trace(ScatterMapClass(
+        lat=[s["lat"] for s in stations_live],
+        lon=[s["lon"] for s in stations_live],
+        mode="markers+text",
+        marker=dict(
+            size=[max(16, min(36, int(s["water_level"] * 10.5))) for s in stations_live],
+            color=[s["color"] for s in stations_live],
+            opacity=0.92
+        ),
+        text=[s["id"] for s in stations_live],
+        textposition="top right",
+        textfont=dict(color="#ffffff", size=11, family="JetBrains Mono"),
+        name="Hydrological Gauges",
+        customdata=station_customdata,
+        hovertemplate=(
+            "<b>%{customdata[0]} (%{text})</b><br>"
+            "Type: %{customdata[1]}<br>"
+            "Observed Water Level: <b>%{customdata[2]:.2f} m</b><br>"
+            "LSTM Forecast Crest: <b>%{customdata[3]:.2f} m</b><br>"
+            "Precipitation: %{customdata[4]:.1f} mm<br>"
+            "Risk Assessment: <b>%{customdata[5]}</b><extra></extra>"
+        )
+    ))
+
+    map_kwargs = {
+        f"{map_layout_name}_style": map_theme,
+        f"{map_layout_name}_center": dict(lat=28.610, lon=77.240),
+        f"{map_layout_name}_zoom": 10.3
+    }
+
+    fig_gis.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=0, r=0, t=0, b=0),
+        height=500,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0,
+            bgcolor="rgba(15,23,42,0.8)",
+            font=dict(color="#cbd5e1", size=10)
+        ),
+        **map_kwargs
+    )
+
+    st.plotly_chart(fig_gis, use_container_width=True)
+
+    # Detailed Station Fleet Breakdown Table
+    st.markdown("#### 📋 Hydrological Basin Station Fleet Status")
+    
+    st_table_html = """
+    <table style="width:100%; border-collapse:collapse; font-size:13px; color:#cbd5e1;">
+        <thead>
+            <tr style="background:#1e293b; color:#94a3b8; text-align:left; border-bottom:1px solid #334155;">
+                <th style="padding:10px 12px;">Station ID</th>
+                <th style="padding:10px 12px;">Checkpoint Name</th>
+                <th style="padding:10px 12px;">Catchment Role</th>
+                <th style="padding:10px 12px;">Current Level</th>
+                <th style="padding:10px 12px;">LSTM Forecast</th>
+                <th style="padding:10px 12px;">Rainfall</th>
+                <th style="padding:10px 12px;">Risk Classification</th>
+            </tr>
+        </thead>
+        <tbody>
+    """
+    for s in stations_live:
+        st_table_html += f"""
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <td style="padding:8px 12px; font-family:'JetBrains Mono', monospace; font-weight:700; color:#38bdf8;">{s['id']}</td>
+            <td style="padding:8px 12px; font-weight:600; color:#ffffff;">{s['name']}</td>
+            <td style="padding:8px 12px; color:#94a3b8;">{s['type']}</td>
+            <td style="padding:8px 12px; font-family:'JetBrains Mono', monospace; font-weight:700;">{s['water_level']:.2f} m</td>
+            <td style="padding:8px 12px; font-family:'JetBrains Mono', monospace; font-weight:700; color:{s['color']};">{s['forecast_crest']:.2f} m</td>
+            <td style="padding:8px 12px; font-family:'JetBrains Mono', monospace;">{s['rainfall']:.1f} mm</td>
+            <td style="padding:8px 12px;"><span class="badge {s['badge_cls']}">{s['risk']}</span></td>
+        </tr>
+        """
+    st_table_html += "</tbody></table>"
+    st.markdown(st_table_html, unsafe_allow_html=True)
+
+
+# ===========================================================================
+# TAB 3: RIVER CATCHMENT CROSS-SECTION
+# ===========================================================================
+with tab3:
     st.markdown("### 🌊 River Channel Profile & Embankment Inundation Depth")
     st.caption("Visual cross-section representing physical elevation of water vs levee crest walls.")
 
@@ -691,9 +929,9 @@ with tab2:
 
 
 # ===========================================================================
-# TAB 3: STORM STRESS-TESTING STUDIO
+# TAB 4: STORM STRESS-TESTING STUDIO
 # ===========================================================================
-with tab3:
+with tab4:
     st.markdown("### 🧪 What-If Cloudburst Simulation & Stress-Testing")
     st.write("Adjust historical parameters to observe how the PyTorch LSTM neural network forecasts flood crests under simulated extreme weather events:")
 
@@ -735,9 +973,9 @@ with tab3:
 
 
 # ===========================================================================
-# TAB 4: AI MODEL DIAGNOSTICS & HYDROLOGICAL LAG
+# TAB 5: AI MODEL DIAGNOSTICS & HYDROLOGICAL LAG
 # ===========================================================================
-with tab4:
+with tab5:
     st.markdown("### 🧠 PyTorch LSTM Architecture & Evaluation Metrics")
     
     d1, d2 = st.columns([1, 1])
