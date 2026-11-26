@@ -1,0 +1,35 @@
+================================================================================
+  RAINFALL-BASED FLOOD EARLY WARNING SYSTEM (FEWS) - PROJECT LINKS
+================================================================================
+
+Student / Developer : Shivaya Mishra
+Project Name        : Rainfall-Based Flood Early Warning System (FEWS)
+Tech Stack          : HiveMQ Cloud MQTT | Python 3.13 | PyTorch 2.15 (LSTM) | Node-RED | Streamlit
+
+--------------------------------------------------------------------------------
+1. MAIN GITHUB REPOSITORY LINK:
+--------------------------------------------------------------------------------
+https://github.com/shivaya34mishra-coder/Rainfall-warning-system
+
+--------------------------------------------------------------------------------
+2. DIRECT FILE & REPORT DOWNLOAD LINKS:
+--------------------------------------------------------------------------------
+• Complete Master Submission Report (PDF):
+  https://github.com/shivaya34mishra-coder/Rainfall-warning-system/raw/main/Complete_Project_Submission_Report.pdf
+
+• Formal Project Synopsis (PDF):
+  https://github.com/shivaya34mishra-coder/Rainfall-warning-system/raw/main/Project_Synopsis_FEWS.pdf
+
+• Complete Project ZIP Bundle:
+  https://github.com/shivaya34mishra-coder/Rainfall-warning-system/raw/main/Rainfall_Flood_Early_Warning_System_Submission.zip
+
+• Screenshots Gallery:
+  https://github.com/shivaya34mishra-coder/Rainfall-warning-system/tree/main/screenshots
+
+--------------------------------------------------------------------------------
+3. LOCAL FILES ON YOUR COMPUTER:
+--------------------------------------------------------------------------------
+• Project Folder : C:\Users\Dell\OneDrive\Desktop\FSD LAB\Energy
+• Master PDF     : C:\Users\Dell\OneDrive\Desktop\Complete_Project_Submission_Report.pdf
+• Synopsis PDF   : C:\Users\Dell\OneDrive\Desktop\Project_Synopsis_FEWS.pdf
+================================================================================
