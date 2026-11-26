@@ -1,0 +1,82 @@
+================================================================================
+          DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING (DATA SCIENCE)
+                OFFICIAL ACADEMIC PROJECT SUBMISSION FORM
+================================================================================
+
+1. STUDENT & COURSE DETAILS
+--------------------------------------------------------------------------------
+Student Name             : Shivaya Mishra
+Roll Number / Student ID : 0184
+Branch & Section         : B.Tech Computer Science & Engineering (Data Science) - Section B
+Subject / Lab Course     : Full Stack Development (FSD Lab) / Capstone Project
+Submission Date          : November 2026
+
+2. PROJECT DETAILS
+--------------------------------------------------------------------------------
+Project Title            : Rainfall-Based Flood Early Warning System (FEWS) Using 
+                           HiveMQ Cloud MQTT, PyTorch LSTM, and Node-RED
+Project Domain           : Internet of Things (IoT) & Deep Learning Time-Series
+Primary GitHub Link      : https://github.com/shivaya34mishra-coder/Rainfall-warning-system
+
+3. TECHNOLOGY STACK
+--------------------------------------------------------------------------------
+• IoT Message Broker     : HiveMQ Cloud MQTT (TLS encrypted port 8883)
+• Backend AI Framework   : Python 3.13, PyTorch 2.15 (2-Layer LSTM)
+• Data Processing        : NumPy, Pandas, Scikit-Learn
+• SCADA Dashboard        : Node-RED v5.0 (node-red-dashboard)
+• Operational Web Center : Streamlit 1.64 + Plotly (with Geographical GIS Map)
+
+4. PROJECT ABSTRACT
+--------------------------------------------------------------------------------
+Flooding caused by intense localized precipitation represents one of the most 
+destructive natural disasters worldwide. Traditional riverbank monitoring 
+infrastructures are reactive—triggering warnings only after retention banks have 
+physically breached. 
+
+This project presents an Automated, End-to-End Predictive Flood Early Warning 
+System (FEWS). The architecture integrates continuous precipitation and river 
+gauge telemetry streamed over HiveMQ Cloud (MQTT with TLS 8883), a 2-layer Long 
+Short-Term Memory (LSTM) deep learning forecasting engine in PyTorch (achieving 
+R² = 99.73%), and interactive dual operational dashboards implemented in 
+Node-RED and Streamlit with an interactive Geographical GIS flood map. 
+
+By modeling non-linear catchment runoff delay dynamics, the system predicts water 
+level crests 15–60 minutes in advance and automatically triggers multi-tiered early 
+warning protocols (Safe, Watch, Warning, Critical) to empower proactive disaster 
+management.
+
+5. KEY MATHEMATICAL & AI MODEL RESULTS
+--------------------------------------------------------------------------------
+• Catchment Inflow Eq.   : h(t) = h_base + (h(t-1) - h_base)*0.92 + [0.35*R(t) + 0.45*R(t-1) + 0.20*R(t-2)]*0.048
+• Neural Architecture    : 2-Layer LSTM (Hidden Dim=64, Dropout=0.2) + Dense ReLU (32) + Linear (1)
+• Coefficient of Det.    : R² Score = 99.73%
+• Root Mean Square Error : RMSE = 0.0476 meters (~4.7 cm)
+• Mean Absolute Error    : MAE = 0.0217 meters (~2.1 cm)
+• Inference Latency      : < 12 milliseconds per cycle
+
+6. OPERATIONAL SAFETY THRESHOLDS
+--------------------------------------------------------------------------------
+• Level < 1.50 m         : SAFE (Green)    - Routine continuous monitoring
+• Level 1.50 m - 2.00 m  : WATCH (Yellow)  - Moderate runoff; alert drainage crews
+• Level 2.00 m - 2.50 m  : WARNING (Orange)- High risk; mobilize sandbags & floodgates
+• Level > 2.50 m         : CRITICAL (Red)  - Imminent breach; sound community sirens
+
+7. SUBMISSION DELIVERABLES & DOWNLOAD LINKS
+--------------------------------------------------------------------------------
+• GitHub Repository      : https://github.com/shivaya34mishra-coder/Rainfall-warning-system
+• Word Submission Doc    : https://github.com/shivaya34mishra-coder/Rainfall-warning-system/raw/main/FINAL_PROJECT_SUBMISSION_FORMAT.docx
+• Master Submission PDF  : https://github.com/shivaya34mishra-coder/Rainfall-warning-system/raw/main/Complete_Project_Submission_Report.pdf
+• Standalone Synopsis    : https://github.com/shivaya34mishra-coder/Rainfall-warning-system/raw/main/Project_Synopsis_FEWS.pdf
+• Complete ZIP Bundle    : https://github.com/shivaya34mishra-coder/Rainfall-warning-system/raw/main/Rainfall_Flood_Early_Warning_System_Submission.zip
+• Screenshots Gallery    : https://github.com/shivaya34mishra-coder/Rainfall-warning-system/tree/main/screenshots
+
+8. STUDENT DECLARATION
+--------------------------------------------------------------------------------
+I hereby declare that this project titled "Rainfall-Based Flood Early Warning System 
+(FEWS)" is my original academic work. All code, neural models, broker scripts, and 
+dashboards have been designed, tested, and pushed to my GitHub account.
+
+Student Name : Shivaya Mishra
+Roll Number  : 0184 (Section B, CSE-DS)
+Date         : November 2026
+================================================================================
